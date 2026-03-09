@@ -88,7 +88,7 @@ class AppText {
       'search': 'Tìm kiếm...',
       'action': 'Thao tác',
       'create_new_class': 'Tạo lớp học mới',
-      'create_and_manage_classes': 'ạo và quản lý các lớp học phần',
+      'create_and_manage_classes': 'Tạo và quản lý các lớp học phần',
       'edit_class_name': 'Sửa tên lớp học',
       'create_class': 'Tạo lớp',
       'class_name': 'Tên lớp học',

@@ -81,6 +81,35 @@ Future<void> initializeStorage() async {
     await prefs.setString(StorageKeys.classes, jsonEncode(jsonList));
   }
 
+  final seededUsers = [
+    const User(
+      id: '5',
+      username: 'student3',
+      password: 'student123',
+      email: 'student3@example.com',
+      fullName: 'Pham Van D',
+      role: 'student',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    ),
+  ];
+  final currentUsers = await getUsers();
+  final userIds = currentUsers.map((u) => u.id).toSet();
+  final missingUsers = seededUsers.where((u) => !userIds.contains(u.id)).toList();
+  if (missingUsers.isNotEmpty) {
+    await saveUsers([...currentUsers, ...missingUsers]);
+  }
+
+  final currentClasses = await getClasses();
+  final defaultClassIndex = currentClasses.indexWhere((c) => c.id == '1');
+  if (defaultClassIndex != -1) {
+    final defaultClass = currentClasses[defaultClassIndex];
+    final mergedStudentIds = {...defaultClass.studentIds, '5'}.toList();
+    if (mergedStudentIds.length != defaultClass.studentIds.length) {
+      currentClasses[defaultClassIndex] = defaultClass.copyWith(studentIds: mergedStudentIds);
+      await saveClasses(currentClasses);
+    }
+  }
+
   if (isNullOrEmptyJsonList(prefs.getString(StorageKeys.questions))) {
     final defaultQuestions = [
       const Question(
@@ -313,7 +342,7 @@ Future<void> initializeStorage() async {
     const ExamSubmission(
       id: 'seed-sub-1',
       examId: '1',
-      studentId: '3',
+      studentId: '5',
       answers: {'1': 0, '2': 1, '3': 1, '4': 2},
       score: 10,
       submittedAt: '2026-03-01T08:30:00.000Z',
@@ -329,7 +358,7 @@ Future<void> initializeStorage() async {
     const ExamSubmission(
       id: 'seed-sub-3',
       examId: '2',
-      studentId: '3',
+      studentId: '5',
       answers: {'2': 1, '3': 1, '5': 1, '6': 2},
       score: 10,
       submittedAt: '2026-03-02T07:45:00.000Z',
@@ -349,10 +378,13 @@ Future<void> initializeStorage() async {
     await prefs.setString(StorageKeys.submissions, jsonEncode(jsonList));
   } else {
     final currentSubmissions = await getSubmissions();
-    final submissionIds = currentSubmissions.map((s) => s.id).toSet();
-    final missingSubmissions = seededSubmissions.where((s) => !submissionIds.contains(s.id)).toList();
-    if (missingSubmissions.isNotEmpty) {
-      await saveSubmissions([...currentSubmissions, ...missingSubmissions]);
+    final seedIds = seededSubmissions.map((s) => s.id).toSet();
+    final nonSeedSubmissions = currentSubmissions.where((s) => !seedIds.contains(s.id)).toList();
+    final cleanedNonSeedSubmissions = nonSeedSubmissions.where((s) => s.studentId != '3').toList();
+    final mergedSubmissions = [...cleanedNonSeedSubmissions, ...seededSubmissions];
+    if (mergedSubmissions.length != currentSubmissions.length ||
+        seedIds.any((id) => currentSubmissions.any((s) => s.id == id) == false)) {
+      await saveSubmissions(mergedSubmissions);
     }
   }
 }
