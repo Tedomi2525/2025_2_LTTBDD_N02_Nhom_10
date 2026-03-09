@@ -309,8 +309,51 @@ Future<void> initializeStorage() async {
     await saveExams([...currentExams, ...missingExams]);
   }
 
-  if (prefs.getString(StorageKeys.submissions) == null) {
-    await prefs.setString(StorageKeys.submissions, jsonEncode([]));
+  final seededSubmissions = [
+    const ExamSubmission(
+      id: 'seed-sub-1',
+      examId: '1',
+      studentId: '3',
+      answers: {'1': 0, '2': 1, '3': 1, '4': 2},
+      score: 10,
+      submittedAt: '2026-03-01T08:30:00.000Z',
+    ),
+    const ExamSubmission(
+      id: 'seed-sub-2',
+      examId: '1',
+      studentId: '4',
+      answers: {'1': 0, '2': 1, '3': 0, '4': 2},
+      score: 7,
+      submittedAt: '2026-03-01T09:00:00.000Z',
+    ),
+    const ExamSubmission(
+      id: 'seed-sub-3',
+      examId: '2',
+      studentId: '3',
+      answers: {'2': 1, '3': 1, '5': 1, '6': 2},
+      score: 10,
+      submittedAt: '2026-03-02T07:45:00.000Z',
+    ),
+    const ExamSubmission(
+      id: 'seed-sub-4',
+      examId: '2',
+      studentId: '4',
+      answers: {'2': 1, '3': 2, '5': 1, '6': 0},
+      score: 5,
+      submittedAt: '2026-03-02T08:10:00.000Z',
+    ),
+  ];
+
+  if (isNullOrEmptyJsonList(prefs.getString(StorageKeys.submissions))) {
+    final List<Map<String, dynamic>> jsonList = seededSubmissions.map((s) => s.toJson()).toList();
+    await prefs.setString(StorageKeys.submissions, jsonEncode(jsonList));
+  } else {
+    final currentSubmissions = await getSubmissions();
+    final submissionIds = currentSubmissions.map((s) => s.id).toSet();
+    final missingSubmissions = seededSubmissions.where((s) => !submissionIds.contains(s.id)).toList();
+    if (missingSubmissions.isNotEmpty) {
+      await saveSubmissions([...currentSubmissions, ...missingSubmissions]);
+    }
   }
 }
 
